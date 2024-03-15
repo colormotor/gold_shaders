@@ -1,4 +1,4 @@
-#version 150
+#version 120
 
 void main()
 {
@@ -13,5 +13,6 @@ void main()
     float g = 0.0;
     float b = 0.0;
     float a = 1.0;
-    gl_FragCoord = vec4(r, g, b, a);
+    gl_FragColor = vec4(r, g, b, a);
 }
+
