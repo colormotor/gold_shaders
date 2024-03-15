@@ -27,40 +27,6 @@ vec3 calcNormal ( in vec3 p )
     return normalize( n );
 }
 
-//float ambientOcclusion( in vec3 pos, in vec3 nor )
-//{
-//    float occ = 0.0;
-//    float sca = 1.0;
-//    int mtl;
-//    for( int i=0; i<5; i++ )
-//    {
-//        float hr = 2.01 + 4.12*float(i)/4.0;
-//        vec3 aopos =  nor * hr + pos;
-//        float dd = computeScene( aopos, mtl );
-//        occ += -(dd-hr)*sca;
-//        sca *= 0.95;
-//    }
-//    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );
-//}
-
-////---------------------------------------------------
-//float ambientOcclusion( in vec3 p, in vec3 n )
-//{
-//    float ao = 0.0;
-//    float weight = 1.9;
-//    int mtl;
-//
-//    for ( int i = 1; i < 6; ++i )
-//    {
-//        float delta = i*i*EPSILON*100.0;
-//        ao += weight * (delta-computeScene(p+n*(0.0+delta), mtl));
-//        weight *= 0.5;
-//    }
-//
-//    return 1.0-clamp(ao, 0.0, 1.0);
-//}
-//
-
 float ambientOcclusion( in vec3 pos, in vec3 nor )
 {
     float occ = 0.0;
@@ -77,6 +43,60 @@ float ambientOcclusion( in vec3 pos, in vec3 nor )
         sca *= 0.75;
     }
     return clamp( 1.0 - occ / 50.14, 0.0, 1.0 );
+}
+
+/// Adapted from https://iquilezles.org/articles/rmshadows/
+float softShadow( in vec3 p, in vec3 rd, float mint, float maxt, float w )
+{
+    float res = 1.0;
+    float t = mint;
+    int mtl = 0;
+    for( int i=0; i<32 && t<maxt; i++ )
+    {
+        float h = computeScene(p + t*rd, mtl);
+        res = min( res, h/(w*t) );
+        t += clamp(h, 0.005, 0.90);
+        if( res<-1.0 || t>maxt ) break;
+    }
+    res = max(res,-1.0);
+    return 0.25*(1.0+res)*(1.0+res)*(2.0-res);
+}
+
+////////////////////////////////
+// Noise
+// SIMPLE NOISE
+// Created by inigo quilez - iq/2013
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
+// Simplex Noise (http://en.wikipedia.org/wiki/Simplex_noise), a type of gradient noise
+// that uses N+1 vertices for random gradient interpolation instead of 2^N as in regular
+// latice based Gradient Noise.
+
+vec2 hash( vec2 p )
+{
+    p = vec2( dot(p,vec2(127.1,311.7)),
+             dot(p,vec2(269.5,183.3)) );
+    
+    return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+}
+
+float noise( in vec2 p )
+{
+    const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+    const float K2 = 0.211324865; // (3-sqrt(3))/6;
+    
+    vec2 i = floor( p + (p.x+p.y)*K1 );
+    
+    vec2 a = p - i + (i.x+i.y)*K2;
+    vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0); //vec2 of = 0.5 + 0.5*vec2(sign(a.x-a.y), sign(a.y-a.x));
+    vec2 b = a - o + K2;
+    vec2 c = a - 1.0 + 2.0*K2;
+    
+    vec3 h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+    
+    vec3 n = h*h*h*h*vec3( dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
+    
+    return dot( n, vec3(70.0) );
 }
 
 
@@ -256,6 +276,8 @@ void main()
   gl_FragColor = clr;
 }
 
+
+
 vec4 computeColor( in vec3 p, in float distance, in int mtl )
 {
   vec3 clr = vec3(1.0); // ambient
@@ -264,9 +286,12 @@ vec4 computeColor( in vec3 p, in float distance, in int mtl )
   //clr *= n*0.5+0.5;
   //return vec4(clr, 1.0);
   // DIffuse light
-  float l = max(0.3, dot(n, normalize(vec3(50.0, 100.0, 30.0))));
-  float ao = ambientOcclusion(p, n)*1.0;
-  l *= ao;
+  vec3 light = normalize(vec3(150.0, 400.0, -90.0));
+  float l = max(0.5, dot(n, light));
+  // ambient occlusion
+  l *= ambientOcclusion(p, n)*1.0;
+  // shadow
+  l *= softShadow(p, light,  0.4, 300.0, 0.98);
   return vec4(clr*l, 1.0);
 }
 
@@ -286,12 +311,14 @@ float computeScene( in vec3 p, out int mtl )
   //p = sdfRotateX(p, -time*4.3);
   //d = sdfUnion(d, sdfBox(p, vec3(100.0)));
   for (int i = 0; i < 5; i++) {
-    vec3 pos = (0.5-vec3(random(vec2(0.0, float(i))),
+    vec3 pos = ((0.5-vec3(random(vec2(0.0, float(i))),
                     random(vec2(1.0, float(i))),
-                    random(vec2(2.0, float(i)))))*100;
-    
-    d = sdfUnion(d, sdfBox(
-                           sdfTranslate(p, pos), vec3(100.0)));
+                    random(vec2(2.1, float(i))))))*100;
+    pos += vec3(sin(i*14.24 + time*(0.9 + 0.1*i)),
+                 cos(i*34.24 + time*(0.4 + 0.241*i)),
+                 cos(i*14.24 + time*(0.24 + 0.741*i)))*50;
+        d = sdfUnion(d, sdfBox(sdfTranslate(p, pos), vec3(100.0)));
+//     d = sdfBlendPoly(d, sdfSphere(sdfTranslate(p, pos), 60.0), 25);
   }
   //d = sdfUnion(d, sdfTorus(p, 150.0, 90.0));
   d = sdfUnion(d, sdfPlane(p, vec3(0.0, 1.0, 0.0), 130.0));

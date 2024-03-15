@@ -13,6 +13,7 @@
 - https://openframeworks.cc/ofBook/chapters/shaders.html Chapter on shaders of ofBook.
   - Note this uses GLSL 1.5, which is a bit different than the examples here
 - https://iquilezles.org/articles/ Articles by Inigo Quilez (IQ) with loads of useful code snippets and tricks to use with shaders.
+- https://p5js.org/learn/getting-started-in-webgl-shaders.html Shaders in P5js
 ** The graphics pipeline
 - https://www.labri.fr/perso/nrougier/python-opengl/ Nice online book describing "modern" OpenGL and the graphics pipeline with Python
 - https://learnopengl.com/Getting-started/Coordinate-Systems Coordinate systems in OpenGL
