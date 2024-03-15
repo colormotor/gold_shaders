@@ -7,6 +7,7 @@
 - https://twigl.app A sandbox for creating/sharing "Tweet-length shaders".
 - https://twitter.com/zozuar A creator of impressive tweet-length shaders
 - https://graphtoy.com An online function visualization tool made with shaders in mind.
+- https://www.cake23.de Felix Woitzel's collection of reaction diffusion shaders
 ** Shader specific
 - https://thebookofshaders.com Great online book with many creative coding examples with shaders
 - https://openframeworks.cc/ofBook/chapters/shaders.html Chapter on shaders of ofBook.
@@ -18,6 +19,4 @@
 - https://carmencincotti.com/2022-05-02/homogeneous-coordinates-clip-space-ndc/ A nice article explaining coordinate transformations in OpenGL
 ** Ray marching (3d)
 - https://www.pouet.net/topic.php?which=7931&page=1 Thread with many insider tricks for ray marching
-
-
-* Notes
+- https://iquilezles.org/articles/distfunctions/ Inigo Quilez 3d SDF functions

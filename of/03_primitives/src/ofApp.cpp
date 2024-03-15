@@ -14,8 +14,7 @@ void ofApp::update(){
 void ofApp::draw(){
   ofSetColor(255);
   shader.begin();
-  shader.setUniform1f("windowWidth", ofGetWidth());
-  shader.setUniform1f("windowHeight", ofGetHeight());
+  shader.setUniform2f("resolution", ofGetWidth(), ofGetHeight());
   shader.setUniform1f("time", ofGetElapsedTimef());
   ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
   shader.end();

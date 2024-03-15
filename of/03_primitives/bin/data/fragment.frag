@@ -1,13 +1,16 @@
 #version 120
 
-uniform float windowWidth;
-uniform float windowHeight;
+uniform vec2 resolution;
 uniform float time;
 
-float plot(vec2 st, float pct){
-  float w = 0.5;
-  return  smoothstep( pct-w, pct, st.y) -
-          smoothstep( pct, pct+w, st.y);
+// Create a "bump" with two smoothstep functions, centered at `center` and with thickness `thickness`. Returns the value of the bump at `v`
+float bump(float v, float center, float thickness) {
+  return smoothstep(center-thickness, center, v) - smoothstep(center, center+thickness, v);
+}
+
+/// Get brightness of a line at a given y position
+float plot(vec2 uv, float y, float w){
+  return bump(uv.y, y, w);
 }
 
 float sdCircle( vec2 p, float r )
@@ -28,21 +31,34 @@ float random (in vec2 _st) {
 
 void main()
 {
-  vec2 uv = gl_FragCoord.xy/windowHeight;
-  vec2 aspect = vec2(windowWidth/windowHeight, 1.0);
+  vec2 uv = gl_FragCoord.xy/resolution.y;
+  vec2 aspect = vec2(resolution.x/resolution.y, 1.0);
+  // A horizontal line
   float y = 0.5;
-//  float y = smoothstep(0.2, 0.5,uv.x)-smoothstep(0.5, 0.8, uv.x);
-  y = 0.5+sin(uv.x*10 + time*2)*0.5;
+  // Step function
+  y = step(aspect.x/2, uv.x);
+  
+  // Smoothstep function
+  y = smoothstep(0.1, 0.9, uv.x);
+  // A bump (same as 'bump function')
+//  y = smoothstep(0.2, 0.5,uv.x)-smoothstep(0.5, 0.8, uv.x);
+  // A sine wave
+  // y = 0.5+sin(uv.x*10 + time*2)*0.5;
   //float y = step(0.5,uv.x);
 //    uv = normalize(vec2(-uv.y*sin(time),
 //                        uv.x*cos(time))*0.5 + 0.5);
 //    gl_FragColor = vec4(uv.x, uv.y, 1.0, 1.0);
 //
 //
-  float v = 0.0; //plot(uv, y);
-  vec2 space = aspect/24 ;
-  float r = length(aspect/2 - uv)*0.01 + sin01(uv.x*4 + time*3)*0.01 - sin01(uv.y*5 + time*2 + 0.1)*0.02 + random(floor(uv*24+0.5))*0.01;
-  v += sdCircle(mod(uv, space)-space*0.5, r);
+  float v = plot(uv*aspect, y, 0.01);
+  
+  
+  // Example using 2d SDFs
+//  float v = 0.0; //plot(uv, y);
+//  vec2 space = aspect/24;
+//  float r = space.y*0.3;
+//  v += sdCircle(mod(uv, space)-space*0.5, r);
+
   v = smoothstep(0.0, 0.01, v);
   gl_FragColor = vec4(v, v, v, 1.0);
 }

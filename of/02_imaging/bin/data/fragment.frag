@@ -4,12 +4,14 @@
 uniform float time;
 uniform vec2 resolution;
 
+// Received from vertex shader
 varying vec2 texCoord;
 
+// The texture we can sample
 uniform sampler2D tex0;
-// Texture gets automtically passed in with "bind"
-// NOTE: Openframeworks uses "Rect" texture samplers, which we need to specify here. This is likely to be `sampler2D` instead on other platforms. For this to work you will have to call `ofDisableArbTex()` in setup.
+// NOTE: Openframeworks uses "Rect" texture samplers by default, which does not user the standard [0,1] and resolution independent way to sample textures. To use this instead we will need to call `ofDisableArbTex()` in ofApp::setup.
 
+/// Box blur
 vec4 boxBlur(in vec2 uv, const int size)
 {
     int window = size*2+1;
@@ -26,7 +28,7 @@ vec4 boxBlur(in vec2 uv, const int size)
     return accum/sum;
 }
 
-
+/// Gaussian blur
 float normpdf(in float x, in float sigma)
 {
   return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
@@ -74,12 +76,6 @@ vec4 gaussBlurSlow(in vec2 uv, const int size)
     return accum/sum;
 }
 
-float random (in vec2 _st) {
-    return fract(sin(dot(_st.xy,
-                         vec2(12.9898,78.233)))*
-        43758.5453123);
-}
-
 // Threshold the input
 vec4 threshold(in vec2 uv, in float thresh)
 {
@@ -91,6 +87,12 @@ vec4 threshold(in vec2 uv, in float thresh)
 }
 
 // Creates random vertical columns
+float random (in vec2 _st) {
+    return fract(sin(dot(_st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
+
 vec4 randomColumns(in vec2 uv, in int num)
 {
   float x = random(vec2(floor(uv.x*num)));
@@ -105,7 +107,7 @@ void main()
   //gl_FragColor = boxBlur(uv, 15);
   //gl_FragColor = gaussBlur(uv);
   //gl_FragColor = gaussBlurSlow(uv, 15);
-  //gl_FragColor = threshold(uv, 0.5);
-  //gl_FragColor = randomColumns(uv, 35);
-  gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+  gl_FragColor = threshold(uv, 0.5);
+  //gl_FragColor = randomColumns(uv, 5);
+  //gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
 }
