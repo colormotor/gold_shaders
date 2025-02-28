@@ -226,10 +226,25 @@ float sdfPlane( vec3 p, vec3 n, float h )
 }
 
 ///////////////
+// Domain distortion
+
+vec3 twistY( in vec3 p, in float k, in float b )
+{
+    float c = cos(k*p.y);
+    float s = sin(k*p.y+b);
+    mat2  m = mat2(c,-s,s,c);
+    vec2 pp = m*p.xz;
+    return vec3(pp.x, p.y, pp.y);
+    //vec3  q = vec3(m*p.yx,p.z);
+    //return q;
+}
+
+
+///////////////
 // Ray marcher
 vec4 traceRay(in vec3 p, in vec3 w, in vec4 bgClr, inout float distance)
 {
-    const int maxIterations = 128;
+  const int maxIterations = 128; //128;
   const float closeEnough = EPSILON;
     vec3 rp;
     int mtl;
@@ -253,7 +268,7 @@ vec4 traceRay(in vec3 p, in vec3 w, in vec4 bgClr, inout float distance)
         {
             return bgClr;
         }
-        t += d;
+        t += d*0.7; // Hack to avoid overshoot
     }
     
     return bgClr;
@@ -306,10 +321,11 @@ float computeScene( in vec3 p, out int mtl )
   mtl = 0;
   float d = 1e10;
   
-  //p = sdfRotateX(p, time*0.03);
-  //p = sdfRepeat(p, vec3(200.0, 400.0, 200.0));
+  //p = sdfRotateY(p, time*1);
+  //p = sdfRepeat(p, vec3(400.0, 400.0, 400.0));
   //p = sdfRotateX(p, -time*4.3);
   //d = sdfUnion(d, sdfBox(p, vec3(100.0)));
+  vec3 twp = twistY(p, 0.005, sin(time*2.5)*0.2);
   for (int i = 0; i < 5; i++) {
     vec3 pos = ((0.5-vec3(random(vec2(0.0, float(i))),
                     random(vec2(1.0, float(i))),
@@ -317,10 +333,12 @@ float computeScene( in vec3 p, out int mtl )
     pos += vec3(sin(i*14.24 + time*(0.9 + 0.1*i)),
                  cos(i*34.24 + time*(0.4 + 0.241*i)),
                  cos(i*14.24 + time*(0.24 + 0.741*i)))*50;
-        d = sdfUnion(d, sdfBox(sdfTranslate(p, pos), vec3(100.0)));
-//     d = sdfBlendPoly(d, sdfSphere(sdfTranslate(p, pos), 60.0), 25);
+    vec3 q = sdfTranslate(p, pos);
+    //vec3 q = sdfTranslate(twp, pos);
+    d = sdfUnion(d, sdfBox(q, vec3(50.0)));
+    //d = sdfBlendPoly(d, sdfSphere(sdfTranslate(p, pos), 60.0), 25);
   }
   //d = sdfUnion(d, sdfTorus(p, 150.0, 90.0));
-  d = sdfUnion(d, sdfPlane(p, vec3(0.0, 1.0, 0.0), 130.0));
+  //d = sdfUnion(d, sdfPlane(p, vec3(0.0, 1.0, 0.0), 130.0));
   return d;
 }
